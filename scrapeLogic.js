@@ -24,7 +24,7 @@ const scrapeLogic = async (res) => {
       doc.forEach(data => arr.push(data.textContent))
       return arr
   })
-  res.send({data: arr})
+  res.send({data: title})
 
   } catch (e) {
     console.error(e);
