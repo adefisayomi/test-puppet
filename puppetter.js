@@ -19,7 +19,7 @@ const pageSizeMap = {
 // Function to add sleep
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const downloadDocWithType = async ({ url, selectedFont, size, type, cookie, isDarkMode }) => {
+const downloadDocWithType = async ({ url, selectedFont, size, type, cookie, isDarkMode }) => {
 
   const browser = await puppeteer.launch({
     args: [
@@ -146,3 +146,5 @@ export const downloadDocWithType = async ({ url, selectedFont, size, type, cooki
     if (browser) await browser.close();
   }
 };
+
+module.exports = { downloadDocWithType };
