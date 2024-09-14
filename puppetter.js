@@ -17,11 +17,11 @@ const pageSizeMap = {
 };
 
 // Function to add sleep
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const downloadDocWithType = async ({ url, selectedFont, size, type, cookie, isDarkMode }) => {
-
+const downloadPdf = async ({ url, selectedFont, size, isDarkMode }) => {
   const browser = await puppeteer.launch({
+    headless: false,
     args: [
       "--disable-setuid-sandbox",
       "--no-sandbox",
@@ -35,48 +35,33 @@ const downloadDocWithType = async ({ url, selectedFont, size, type, cookie, isDa
   });
 
   try {
-    if (!url) throw new Error('Invalid request.');
+    if (!url) throw new Error("Invalid request.");
 
     const page = await browser.newPage();
 
-    // Extract and parse the cookie from the request headers
-    const parsedCookies = cookie?.split('; ').map(cookieString => {
-      const [name, value] = cookieString.split('=');
-      return { 
-        name, 
-        value, 
-        domain: process.env.NODE_ENV === 'development' ? 'localhost' : 'https://qweek.vercel.app' 
-      };
-    });
-
-    // Set the cookie(s) for authentication if available
-    if (parsedCookies) {
-      await page.setCookie(...parsedCookies);
-    }
-
     // Go to the page and wait for content to load
-    await page.goto(url, { waitUntil: 'networkidle0' });
+    await page.goto(url, { waitUntil: "networkidle0" });
 
     // Inject CSS styles (either dark or light mode)
     if (isDarkMode) {
       await page.evaluate(() => {
-        document.body.classList.add('dark'); // Apply dark mode
+        document.body.classList.add("dark"); // Apply dark mode
       });
     } else {
       await page.evaluate(() => {
-        document.body.classList.remove('dark'); // Use default (light) mode
+        document.body.classList.remove("dark"); // Use default (light) mode
       });
     }
 
     // Inject the selected font into the page
     if (selectedFont) {
       await page.evaluate(async (font) => {
-        const fontLink = document.createElement('link');
-        fontLink.rel = 'stylesheet';
-        fontLink.href = `https://fonts.googleapis.com/css2?family=${font.replace(/\s/g, '+')}&display=swap`;
+        const fontLink = document.createElement("link");
+        fontLink.rel = "stylesheet";
+        fontLink.href = `https://fonts.googleapis.com/css2?family=${font.replace(/\s/g, "+")}&display=swap`;
         document.head.appendChild(fontLink);
 
-        const fontStyle = document.createElement('style');
+        const fontStyle = document.createElement("style");
         fontStyle.textContent = `
           #resume_container {
             font-family: '${font}', sans-serif !important;
@@ -95,14 +80,14 @@ const downloadDocWithType = async ({ url, selectedFont, size, type, cookie, isDa
 
     // Get the bounding box of the resume container
     const boundingBox = await page.evaluate(() => {
-      const element = document.querySelector('#resume_container');
+      const element = document.querySelector("#resume_container");
       if (!element) return null;
       const { offsetWidth, offsetHeight } = element;
       return { width: offsetWidth, height: offsetHeight };
     });
 
     if (!boundingBox) {
-      throw new Error('Element with id #resume_container not found');
+      throw new Error("Element with id #resume_container not found");
     }
 
     // Determine the size dimensions
@@ -110,35 +95,18 @@ const downloadDocWithType = async ({ url, selectedFont, size, type, cookie, isDa
     const width = sizeDimensions ? mmToPx(sizeDimensions.width) : boundingBox.width;
     const height = sizeDimensions ? mmToPx(sizeDimensions.height) : boundingBox.height;
 
-    // Generate the requested file type
-    let file;
-    switch (type) {
-      case 'pdf':
-        file = await page.pdf({
-          printBackground: isDarkMode,
-          width: `${width}px`,
-          height: `${height}px`,
-          margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
-        });
-        break;
-      case 'png':
-      case 'jpeg':
-        file = await page.screenshot({
-          fullPage: true,
-          type: type,
-          clip: { x: 0, y: 0, width, height },
-        });
-        break;
-      case 'docx':
-        throw new Error('DOCX generation is not yet implemented.');
-      default:
-        throw new Error('Unsupported file type');
-    }
+    // Generate the PDF
+    const pdf = await page.pdf({
+      printBackground: isDarkMode,
+      width: `${width}px`,
+      height: `${height}px`,
+      margin: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
+    });
 
     return {
-      success: true, 
+      success: true,
       message: null,
-      data: file
+      data: pdf,
     };
   } catch (err) {
     return { success: false, message: err.message };
@@ -147,4 +115,4 @@ const downloadDocWithType = async ({ url, selectedFont, size, type, cookie, isDa
   }
 };
 
-module.exports = { downloadDocWithType };
+module.exports = { downloadPdf };
