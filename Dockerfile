@@ -1,6 +1,6 @@
 FROM ghcr.io/puppeteer/puppeteer:19.7.2
 
-# Install necessary dependencies for running Chrome in headless mode
+# Update apt-get and install dependencies
 RUN apt-get update && apt-get install -y \
     libnss3 \
     libatk1.0-0 \
@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     libxcomposite1 \
     libxdamage1 \
     libxrandr2 \
-    libgbm-dev \
+    libgbm1 \
     libpango1.0-0 \
     libasound2 \
     libwayland-client0 \
@@ -19,13 +19,13 @@ RUN apt-get update && apt-get install -y \
     libwayland-egl1 \
     libgdk-pixbuf2.0-0 \
     libgtk-3-0 \
-    libxshmfence-dev \
+    libxshmfence1 \
     ca-certificates \
     fonts-liberation \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables to skip downloading Chromium
+# Set environment variables to skip Chromium download
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
