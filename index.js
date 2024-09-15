@@ -24,7 +24,9 @@ app.get("/scrape", (req, res) => {
 
 app.post('/resume', async (req, res) => {
     const { url, selectedFont, size, isDarkMode } = req.body;
+    console.log(req.body)
     const result = await downloadPdf({ url, selectedFont, size, isDarkMode })
+    console.log("resule--------------", result)
     res.json(result)
 });
 
