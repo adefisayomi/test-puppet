@@ -21,7 +21,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const downloadPdf = async ({ url, selectedFont, size, isDarkMode }) => {
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: false,
     args: [
       "--disable-setuid-sandbox",
       "--no-sandbox",

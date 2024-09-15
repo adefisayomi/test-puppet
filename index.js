@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 4000;
 
 // Enable CORS for requests from localhost:3000
 app.use(cors({
-  origin: ["http://localhost:3000", "https://qweek.vercel.app"], // Allow requests from localhost:3000
+  origin: ["http://localhost:3000", "https://qweek.vercel.app", "https://puppet-3wt0.onrender.com"], // Allow requests from localhost:3000
   methods: "GET,POST", // Allow specific methods
   credentials: true // Allow cookies or credentials to be included
 }));
