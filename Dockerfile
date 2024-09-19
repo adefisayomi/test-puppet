@@ -1,42 +1,50 @@
-# Use Puppeteer's Docker image as the base
-FROM ghcr.io/puppeteer/puppeteer:19.7.2
+# Use a Node.js base image
+FROM node:18-slim
 
-# Set environment variables to configure Puppeteer
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
-
-# Install Chromium dependencies manually if necessary
+# Install necessary packages for Chromium and Puppeteer
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
     ca-certificates \
-    --no-install-recommends
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libgbm1 \
+    libxdamage1 \
+    libxrandr2 \
+    xdg-utils \
+    libnss3 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxss1 \
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
 
-# Add Google's signing key and setup the Chrome stable repository
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+# Install Chromium manually
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    apt-get install -y ./google-chrome-stable_current_amd64.deb && \
+    rm google-chrome-stable_current_amd64.deb
 
-# Install the latest version of Chrome Stable
-RUN apt-get update && apt-get install -y \
-    google-chrome-stable \
-    --no-install-recommends
+# Set Puppeteer environment variables to skip Chromium download and point to the correct executable
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-# Clean up the unnecessary files
-RUN apt-get purge --auto-remove -y gnupg wget ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set working directory for the application
+# Set working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and install dependencies
+# Copy package.json and package-lock.json
 COPY package*.json ./
-RUN npm ci
 
-# Copy the rest of the application files
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the app files
 COPY . .
 
-# Expose the default port (optional, in case your app needs it)
+# Expose the app port (optional, based on your app's needs)
 EXPOSE 3000
 
-# Run the application
+# Run the app
 CMD ["node", "index.js"]
