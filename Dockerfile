@@ -3,7 +3,9 @@ FROM ghcr.io/puppeteer/puppeteer:19.7.2
 USER root
 
 RUN apt-get update && \
-    apt-get install -y xvfb
+    apt-get install -y xvfb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 USER node
 
@@ -19,5 +21,4 @@ RUN npm ci
 COPY . .
 
 # Start xvfb and run the application
-CMD [ "node", "index.js" ]
-
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1280x720x24 & node index.js"]
