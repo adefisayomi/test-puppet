@@ -24,15 +24,22 @@ const downloadPdf = async ({ url, selectedFont, size, isDarkMode }) => {
   try {
     console.log("Launching browser...");
 
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox', '--disable-setuid-sandbox'
-      ],
-      executablePath: process.env.NODE_ENV === "production"
-        ? process.env.PUPPETEER_EXECUTABLE_PATH
-        : puppeteer.executablePath(),
-    });
+const browser = await puppeteer.launch({
+  headless: 'new', // Use 'new' headless mode for better compatibility
+  args: [
+    '--no-sandbox', // Disables sandbox for Chromium, required on Render.com
+    '--disable-setuid-sandbox', // Also helps with sandboxing issues
+    '--disable-dev-shm-usage', // Avoids using `/dev/shm`, often too small in containerized environments
+    '--disable-accelerated-2d-canvas', // Disables GPU acceleration, can reduce resource usage
+    '--disable-gpu', // Optional: Disable GPU to reduce resource usage
+    // '--single-process', // Helps avoid some multi-process issues in constrained environments
+    '--no-zygote' // Prevents starting extra child processes
+  ],
+  executablePath: process.env.NODE_ENV === "production"
+    ? process.env.PUPPETEER_EXECUTABLE_PATH // Render.com will use this path for Chromium
+    : puppeteer.executablePath(), // Local development uses default Puppeteer path
+});
+
 
     const page = await browser.newPage();
     console.log("Navigating to URL...");
