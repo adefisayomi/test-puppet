@@ -20,46 +20,31 @@ const pageSizeMap = {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const downloadPdf = async ({ url, selectedFont, size, isDarkMode }) => {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-gpu",
-      "--no-zygote",
-      "--single-process",
-      "--disable-accelerated-2d-canvas",
-      "--disable-gl-drawing-for-tests",
-      "--disable-software-rasterizer",
-      "--disable-xss-auditor",
-    ],
-    executablePath:
-      process.env.NODE_ENV === "production"
+  let browser;
+  try {
+    console.log("Launching browser...");
+
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox', '--disable-setuid-sandbox'
+      ],
+      executablePath: process.env.NODE_ENV === "production"
         ? process.env.PUPPETEER_EXECUTABLE_PATH
         : puppeteer.executablePath(),
-  });
-
-  try {
-    if (!url) throw new Error("Invalid request.");
+    });
 
     const page = await browser.newPage();
+    console.log("Navigating to URL...");
+    
+    await page.goto(url, { waitUntil: "networkidle0", timeout: 60000 });
 
-    // Go to the page and wait for content to load
-    await page.goto(url, { waitUntil: "networkidle0" });
-
-    // Inject CSS styles (either dark or light mode)
     if (isDarkMode) {
-      await page.evaluate(() => {
-        document.body.classList.add("dark"); // Apply dark mode
-      });
+      await page.evaluate(() => document.body.classList.add("dark"));
     } else {
-      await page.evaluate(() => {
-        document.body.classList.remove("dark"); // Use default (light) mode
-      });
+      await page.evaluate(() => document.body.classList.remove("dark"));
     }
 
-    // Inject the selected font into the page
     if (selectedFont) {
       await page.evaluate(async (font) => {
         const fontLink = document.createElement("link");
@@ -68,23 +53,18 @@ const downloadPdf = async ({ url, selectedFont, size, isDarkMode }) => {
         document.head.appendChild(fontLink);
 
         const fontStyle = document.createElement("style");
-        fontStyle.textContent = `
-          #resume_container {
-            font-family: '${font}', sans-serif !important;
-          }
-        `;
+        fontStyle.textContent = `#resume_container { font-family: '${font}', sans-serif !important; }`;
         document.head.appendChild(fontStyle);
 
-        // Ensure the font is fully loaded
         await document.fonts.load(`1em ${font}`);
         await document.fonts.ready;
       }, selectedFont);
     }
 
-    // Wait for the font to render and stabilize
+    console.log("Waiting for font rendering...");
     await sleep(2000);
 
-    // Get the bounding box of the resume container
+    console.log("Getting bounding box...");
     const boundingBox = await page.evaluate(() => {
       const element = document.querySelector("#resume_container");
       if (!element) return null;
@@ -96,29 +76,31 @@ const downloadPdf = async ({ url, selectedFont, size, isDarkMode }) => {
       throw new Error("Element with id #resume_container not found");
     }
 
-    // Determine the size dimensions
     const sizeDimensions = size ? pageSizeMap[size] : null;
     const width = sizeDimensions ? mmToPx(sizeDimensions.width) : boundingBox.width;
     const height = sizeDimensions ? mmToPx(sizeDimensions.height) : boundingBox.height;
 
-    // Generate the PDF
-    const pdf = await page.pdf({
-      printBackground: isDarkMode,
-      width: `${width}px`,
-      height: `${height}px`,
-      margin: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
+    console.log("Generating PDF...");
+    const pdfBuffer = await page.pdf({
+      printBackground: isDarkMode, // Prints background (dark mode) if set
+      format: size || 'A4', // Must be a valid PaperFormat type, default to A4
+      margin: { top: '0px', right: '0px', bottom: '0px', left: '0px' },
+      preferCSSPageSize: true, // Respect any CSS-defined page sizes
     });
+    const buffer = Buffer.from(pdfBuffer)
 
-    return {
-      success: true,
-      message: null,
-      data: pdf,
-    };
+    console.log("PDF generated successfully.");
+    return { success: true, message: null, data: buffer };
   } catch (err) {
-    return { success: false, message: err.message };
+    console.error("Error generating PDF:", err);
+    return { success: false, message: err.message }
   } finally {
-    if (browser) await browser.close();
+    if (browser) {
+      console.log("Closing browser...");
+      await browser.close();
+    }
   }
 };
+
 
 module.exports = { downloadPdf };
