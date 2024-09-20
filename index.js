@@ -23,7 +23,6 @@ app.post('/resume', async (req, res) => {
     res.send(result)
 });
 
-
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });

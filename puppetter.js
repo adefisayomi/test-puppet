@@ -26,6 +26,7 @@ const downloadPdf = async ({ url, selectedFont, size, isDarkMode }) => {
 
 const browser = await puppeteer.launch({
   headless: 'new', // Use 'new' headless mode for better compatibility
+  ignoreDefaultArgs: ['--disable-extensions'],
   args: [
     '--no-sandbox', // Disables sandbox for Chromium, required on Render.com
     '--disable-setuid-sandbox', // Also helps with sandboxing issues
