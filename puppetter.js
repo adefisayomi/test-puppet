@@ -1,6 +1,5 @@
 require("dotenv").config();
 const puppeteer = require("puppeteer");
-const config = require('./puppeteer.config');
 
 // Convert millimeters to pixels
 const mmToPx = (mm) => mm * 3.7795275591; // 1 mm = 3.7795275591 px
@@ -37,7 +36,9 @@ const browser = await puppeteer.launch({
     // '--single-process', // Helps avoid some multi-process issues in constrained environments
     '--no-zygote' // Prevents starting extra child processes
   ],
-  executablePath: config.chrome.skipDownload ? undefined : process.env.PUPPETEER_EXECUTABLE_PATH,
+  executablePath: process.env.NODE_ENV === "production"
+    ? process.env.PUPPETEER_EXECUTABLE_PATH // Render.com will use this path for Chromium
+    : puppeteer.executablePath(), // Local development uses default Puppeteer path
 });
 
 
