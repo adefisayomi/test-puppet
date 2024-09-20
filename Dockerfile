@@ -2,8 +2,10 @@ FROM ghcr.io/puppeteer/puppeteer:19.7.2
 
 USER root
 
+# Install dependencies and add Google Chrome's GPG key
 RUN apt-get update && \
-    apt-get install -y xvfb && \
+    apt-get install -y wget xvfb gnupg2 && \
+    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
